@@ -331,7 +331,7 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 
 	if(!perfectSquare(toFactor)) {
 
-		notValid[tofactor] = tofactor;
+		notValid[toFactor] = toFactor;
 		
 	}
 
