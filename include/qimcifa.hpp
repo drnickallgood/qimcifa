@@ -306,6 +306,8 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
 
 std::unordered_map<BigIntegerInput, BigIntegerInput> notValid;
 
+std::mutex notValidMutex;
+
 
 template <typename BigInteger>
 inline bool perfectSquare(const BigInteger& toFactor) {
@@ -333,6 +335,7 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 
 	if(!perfectSquare(toFactor)) {
 
+		std::lock_guard<std::mutex> lock(notValidMutex);	
 		notValid[toFactor] = toFactor;
 		
 	}
