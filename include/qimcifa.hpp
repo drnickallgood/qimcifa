@@ -69,6 +69,8 @@
 #include <stdlib.h>
 #include <string>
 #include <time.h>
+#include <unordered_map>
+
 
 #include <boost/dynamic_bitset.hpp>
 
@@ -299,11 +301,19 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
 }
 
 #if IS_SQUARES_CONGRUENCE_CHECK
+
+// Check if it's a perfect square
+
 template <typename BigInteger>
 inline bool perfectSquare(const BigInteger& toFactor) {
 
+	BigInteger ps = sqrt(toFactor);
 
-	return true;
+	if(ps * ps == toFactor) {
+		return true;
+    }
+
+	return false;
 }
 
 template <typename BigInteger>
@@ -314,6 +324,23 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     // a^2 = b^2 mod N
     // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
+
+
+	std::unordered_map<BigInteger, BigInteger> notValid;
+	// If we do not have a perfect square, then we need to store this to be used later
+
+	if(!perfectSquare(toFactor)) {
+
+		notValid[tofactor] = tofactor;
+		
+	}
+
+	std::cout << "Dumping invalid elements stored" << std::endl;
+
+	for(const auto & pair: notValid) 
+	{
+		std::cout << pair.first << std::endl;
+	}
 
     // Consider a to be equal to "toTest."
     const BigInteger bSqr = (toTest * toTest) % toFactor;
