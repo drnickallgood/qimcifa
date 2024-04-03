@@ -304,6 +304,9 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
 
 // Check if it's a perfect square
 
+std::unordered_map<BigIntegerInput, BigIntegerInput> notValid;
+
+
 template <typename BigInteger>
 inline bool perfectSquare(const BigInteger& toFactor) {
 
@@ -318,15 +321,14 @@ inline bool perfectSquare(const BigInteger& toFactor) {
 
 template <typename BigInteger>
 inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock, 
+	std::unordered_map<BigIntegerInput, BigIntegerInput> &notValid)
 {
     // The basic idea is "congruence of squares":
     // a^2 = b^2 mod N
     // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
 
-
-	std::unordered_map<BigInteger, BigInteger> notValid;
 	// If we do not have a perfect square, then we need to store this to be used later
 
 	if(!perfectSquare(toFactor)) {
@@ -385,7 +387,7 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
 #endif
 
 #if IS_SQUARES_CONGRUENCE_CHECK
-    return checkCongruenceOfSquares<BigInteger>(toFactor, base, iterClock);
+    return checkCongruenceOfSquares<BigInteger>(toFactor, base, iterClock, notValid);
 #else
     return false;
 #endif
