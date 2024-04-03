@@ -300,6 +300,13 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
 
 #if IS_SQUARES_CONGRUENCE_CHECK
 template <typename BigInteger>
+inline bool perfectSquare(const BigInteger& toFactor) {
+
+
+	return true;
+}
+
+template <typename BigInteger>
 inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
 {
