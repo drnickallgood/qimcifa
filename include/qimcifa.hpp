@@ -367,34 +367,31 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
     // then we can immediately find a factor.
 
-	// If we do not have a perfect square, then we need to store this to be used later
-
-	if(!perfectSquare(toTest)) {
-
-		std::lock_guard<std::mutex> lock(notValidMutex);	
-		notValid[toTest] = toTest;
-		
-	}
-
-	/*
-	std::cout << "Dumping invalid elements stored" << std::endl;
-	for(const auto & pair: notValid) 
-	{
-		std::cout << pair.first << std::endl;
-	}
-
-	*/
-
     // Consider a to be equal to "toTest."
+	// If it's a perfect square
+
     const BigInteger bSqr = (toTest * toTest) % toFactor;
     const BigInteger b = sqrt(bSqr);
+
     if ((b * b) != bSqr) {
+		std::lock_guard<std::mutex> lock(notValidMutex);	
+		notValid[toTest] = toTest;
         return false;
     }
 
     BigInteger f1 = gcd(toTest + b, toFactor);
     BigInteger f2 = gcd(toTest - b, toFactor);
     BigInteger fmul = f1 * f2;
+	
+
+	// Multiply toTest by any numbers that previously failed congruence of squares check 
+	for(const auto &pair : notValid) {
+		if(toTest * pair.second == toFactor) {
+        	printSuccess<BigInteger>(toTest, pair.second , toFactor, "Found from previous match ", iterClock);
+			return true;
+		}
+	}
+
     while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
         fmul = f1;
         f1 = f1 * f2;
