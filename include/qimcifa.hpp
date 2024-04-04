@@ -369,21 +369,21 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 
 	// If we do not have a perfect square, then we need to store this to be used later
 
-	if(!perfectSquare(toFactor)) {
-
-		std::cout << "Storing toFactor: " << toFactor << std::endl;
+	if(!perfectSquare(toTest)) {
 
 		std::lock_guard<std::mutex> lock(notValidMutex);	
-		notValid[toFactor] = toFactor;
+		notValid[toTest] = toTest;
 		
 	}
 
+	/*
 	std::cout << "Dumping invalid elements stored" << std::endl;
-
 	for(const auto & pair: notValid) 
 	{
 		std::cout << pair.first << std::endl;
 	}
+
+	*/
 
     // Consider a to be equal to "toTest."
     const BigInteger bSqr = (toTest * toTest) % toFactor;
