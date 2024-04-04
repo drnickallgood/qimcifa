@@ -124,6 +124,7 @@ int mainBody(const BigInteger& toFactor)
     //     std::cout << i << ": " << trialDivisionPrimes[i] << ", ";
     // }
 
+	
     const unsigned cpuCount = std::thread::hardware_concurrency();
 
     int64_t tdLevel = 7;
@@ -228,19 +229,20 @@ int mainBody(const BigInteger& toFactor)
     }
     radius = (BigInteger)pow((uint64_t)radius, exp / 32.0);
 #endif
+	std::unordered_map<BigInteger, BigInteger> notSmoothNumbers;
 
     const BigInteger nodeRange = (((fullRange + nodeCount - 1U) / nodeCount) + BIGGEST_WHEEL - 1U) / BIGGEST_WHEEL;
     batchNumber = nodeId * nodeRange;
     batchBound = (nodeId + 1) * nodeRange;
     batchCount = nodeCount * nodeRange;
 
-    const auto workerFn = [toFactor, &inc_seqs, &offset, &iterClock] {
+    const auto workerFn = [toFactor, &inc_seqs, &offset, &iterClock, &notSmoothNumbers] {
         std::vector<boost::dynamic_bitset<uint64_t>> inc_seqs_clone;
         inc_seqs_clone.reserve(inc_seqs.size());
         for (const auto& b : inc_seqs) {
             inc_seqs_clone.emplace_back(b);
         }
-        getSmoothNumbers(toFactor, inc_seqs_clone, offset, iterClock);
+        getSmoothNumbers(toFactor, inc_seqs_clone, offset, iterClock, notSmoothNumbers);
     };
 
     std::vector<std::future<void>> futures;

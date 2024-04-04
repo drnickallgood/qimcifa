@@ -304,7 +304,7 @@ inline size_t GetWheelIncrement(std::vector<boost::dynamic_bitset<size_t>>& inc_
 
 // Check if it's a perfect square
 
-std::unordered_map<BigIntegerInput, BigIntegerInput> notValid;
+//std::unordered_map<BigIntegerInput, BigIntegerInput> notValid;
 
 std::mutex notValidMutex;
 
@@ -323,8 +323,44 @@ inline bool perfectSquare(const BigInteger& toFactor) {
 
 template <typename BigInteger>
 inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+    
+{
+    // The basic idea is "congruence of squares":
+    // a^2 = b^2 mod N
+    // If we're lucky enough that the above is true, for a^2 = toTest and (b^2 mod N) = remainder,
+    // then we can immediately find a factor.
+
+    // Consider a to be equal to "toTest."
+    const BigInteger bSqr = (toTest * toTest) % toFactor;
+    const BigInteger b = sqrt(bSqr);
+    if ((b * b) != bSqr) {
+        return false;
+    }
+
+    BigInteger f1 = gcd(toTest + b, toFactor);
+    BigInteger f2 = gcd(toTest - b, toFactor);
+    BigInteger fmul = f1 * f2;
+    while ((fmul > 1U) && (fmul != toFactor) && ((toFactor % fmul) == 0)) {
+        fmul = f1;
+        f1 = f1 * f2;
+        f2 = toFactor / (fmul * f2);
+        fmul = f1 * f2;
+    }
+    if ((fmul == toFactor) && (f1 > 1U) && (f2 > 1U)) {
+        // Inform the other threads on this node that we've succeeded and are done:
+        printSuccess<BigInteger>(f1, f2, toFactor, "Congruence of squares: Found ", iterClock);
+        return true;
+    }
+
+    return false;
+}
+
+
+template <typename BigInteger>
+inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigInteger& toTest,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock, 
-	std::unordered_map<BigIntegerInput, BigIntegerInput> &notValid)
+	std::unordered_map<BigInteger, BigInteger> &notValid)
 {
     // The basic idea is "congruence of squares":
     // a^2 = b^2 mod N
@@ -334,6 +370,8 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 	// If we do not have a perfect square, then we need to store this to be used later
 
 	if(!perfectSquare(toFactor)) {
+
+		std::cout << "Storing toFactor: " << toFactor << std::endl;
 
 		std::lock_guard<std::mutex> lock(notValidMutex);	
 		notValid[toFactor] = toFactor;
@@ -375,7 +413,35 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
 
 template <typename BigInteger>
 inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base,
-    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock) {
+   	const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+	 
+ {
+#if IS_RSA_SEMIPRIME
+    if ((toFactor % base) == 0U) {
+        printSuccess<BigInteger>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
+        return true;
+    }
+#else
+    BigInteger n = gcd(base, toFactor);
+    if (n != 1U) {
+        printSuccess<BigInteger>(n, toFactor / n, toFactor, "Has common factor: Found ", iterClock);
+        return true;
+    }
+#endif
+
+#if IS_SQUARES_CONGRUENCE_CHECK
+    return checkCongruenceOfSquares<BigInteger>(toFactor, base, iterClock);
+#else
+    return false;
+#endif
+}
+
+
+template <typename BigInteger>
+inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteger& base,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock,
+     std::unordered_map<BigInteger, BigInteger> &notValid)
+ {
 #if IS_RSA_SEMIPRIME
     if ((toFactor % base) == 0U) {
         printSuccess<BigInteger>(base, toFactor / base, toFactor, "Exact factor: Found ", iterClock);
@@ -396,9 +462,12 @@ inline bool getSmoothNumbersIteration(const BigInteger& toFactor, const BigInteg
 #endif
 }
 
+
+
 template <typename BigInteger>
 bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs, const BigInteger& offset,
     const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock)
+
 {
     for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchBound; batchNum = (BigInteger)getNextBatch()) {
         const BigInteger batchStart = batchNum * BIGGEST_WHEEL + offset;
@@ -413,4 +482,30 @@ bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bit
 
     return false;
 }
+
+
+template <typename BigInteger>
+bool getSmoothNumbers(const BigInteger& toFactor, std::vector<boost::dynamic_bitset<uint64_t>>& inc_seqs, const BigInteger& offset,
+    const std::chrono::time_point<std::chrono::high_resolution_clock>& iterClock, std::unordered_map<BigInteger, BigInteger> &notValid) 
+
+{
+    for (BigInteger batchNum = (BigInteger)getNextBatch(); batchNum < batchBound; batchNum = (BigInteger)getNextBatch()) {
+        const BigInteger batchStart = batchNum * BIGGEST_WHEEL + offset;
+        const BigInteger batchEnd = (batchNum + 1U) * BIGGEST_WHEEL + offset;
+        for (BigInteger p = batchStart; p < batchEnd;) {
+            p += GetWheelIncrement(inc_seqs);
+            if (getSmoothNumbersIteration<BigInteger>(toFactor, forward(p), iterClock, notValid)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
+
+
+
+
 } // namespace Qimcifa
