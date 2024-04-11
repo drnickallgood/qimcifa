@@ -437,7 +437,7 @@ inline bool checkCongruenceOfSquares(const BigInteger& toFactor, const BigIntege
     // Multiply toTest by any numbers that previously failed congruence of squares check
 	for(const auto &invalid : notValid) {
         if(toTest * invalid == toFactor) {
-            printSuccess<BigInteger>(toTest, invalid, toFactor, "Found from previous match ", iterClock);
+            printSuccess<BigInteger>(toTest, invalid, toFactor, "*** Found from previous match *** ", iterClock);
 			return true;
 		}
 	}
